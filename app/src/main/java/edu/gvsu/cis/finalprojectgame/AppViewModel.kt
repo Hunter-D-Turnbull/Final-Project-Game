@@ -1,5 +1,6 @@
 package edu.gvsu.cis.finalprojectgame
 
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import edu.gvsu.cis.finalprojectgame.ui.theme.CardBlack
@@ -51,6 +52,21 @@ class AppViewModel : ViewModel () {
     private val _currentBackgroundColor = MutableStateFlow(MyGreen)
     val currentBackgroundColor = _currentBackgroundColor.asStateFlow()
 
+    private val _currentHandTotal = MutableStateFlow<Int>(0)
+    val currentHandTotal = _currentHandTotal.asStateFlow()
+
+    private val _currentDealerTotal = MutableStateFlow<Int>(0)
+    val currentDealerTotal = _currentHandTotal.asStateFlow()
+
+    private val _playerTurnOver = MutableStateFlow<Boolean>(false)
+    val playerTurnOver = _playerTurnOver.asStateFlow()
+
+    private val _currentDeck = MutableStateFlow(listOf<CardClass?>())
+    val currentDeck = _currentDeck.asStateFlow()
+
+    private val _currentPoints = MutableStateFlow<Int>(1000)
+    val currentPoints = _currentPoints.asStateFlow()
+
     fun createDeck() {
         for (suit in Suit.entries) {
             for (rank in Rank.entries) {
@@ -87,37 +103,102 @@ class AppViewModel : ViewModel () {
             _gameInProgress.update { true }
             createDeck()
             shuffleDeck()
-            var currentDeck = _deck.value
+            _currentDeck.update { _deck.value }
             repeat(2) {
-                _playerHand.update { playerHand -> playerHand + currentDeck[_cardsDealt.value] }
-                currentDeck = currentDeck.drop(_cardsDealt.value)
+                _playerHand.update { playerHand -> playerHand + _currentDeck.value[0] }
+                _currentDeck.update {currentDeck -> currentDeck.drop(1)}
                 _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
             }
+            addPlayerHand()
             repeat(2) {
-                _dealerHand.update { dealerHand -> dealerHand + currentDeck[_cardsDealt.value] }
-                currentDeck = currentDeck.drop(_cardsDealt.value)
+                _dealerHand.update { dealerHand -> dealerHand + _currentDeck.value[0] }
+                _currentDeck.update {currentDeck -> currentDeck.drop(1)}
                 _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
             }
+            checkIfPlayerDone()
         } else {
             _dealerHand.value = listOf<CardClass?>()
             _playerHand.value = listOf<CardClass?>()
             _cardsDealt.update {0}
+            _playerTurnOver.update { false }
             shuffleDeck()
-            var currentDeck = _deck.value
+            _currentDeck.update { _deck.value }
             repeat(2) {
-                _playerHand.update { playerHand -> playerHand + currentDeck[_cardsDealt.value] }
-                currentDeck = currentDeck.drop(_cardsDealt.value)
+                _playerHand.update { playerHand -> playerHand + _currentDeck.value[0] }
+                _currentDeck.update {currentDeck -> currentDeck.drop(1)}
                 _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
             }
+            addPlayerHand()
             repeat(2) {
-                _dealerHand.update { dealerHand -> dealerHand + currentDeck[_cardsDealt.value] }
-                currentDeck = currentDeck.drop(_cardsDealt.value)
+                _dealerHand.update { dealerHand -> dealerHand + _currentDeck.value[0] }
+                _currentDeck.update {currentDeck -> currentDeck.drop(1)}
                 _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
             }
+            checkIfPlayerDone()
         }
+    }
+
+    fun checkIfPlayerDone() {
+        if (_currentHandTotal.value == 21) {
+            _playerTurnOver.update { true }
+            dealerTurn()
+        } else if (_currentHandTotal.value > 21) {
+            _playerTurnOver.update { true }
+            _currentPoints.update { currentPoints -> currentPoints - 500 }
+        } else {
+            _playerTurnOver.update { false }
+        }
+    }
+
+    fun addPlayerHand() {
+        _currentHandTotal.update { 0 }
+        val currHand = _playerHand.value
+        currHand.forEach { card -> _currentHandTotal.update{currentTotal -> currentTotal + card!!.value}}
+    }
+
+    fun addDealerHand() {
+        _currentDealerTotal.update { 0 }
+        val currHand = _dealerHand.value
+        currHand.forEach { card -> _currentDealerTotal.update{currentTotal -> currentTotal + card!!.value}}
     }
 
     fun updateBackground(newColor: Color) {
         _currentBackgroundColor.update {newColor}
+    }
+
+    fun hit() {
+        if (!_playerTurnOver.value) {
+            _playerHand.update { playerHand -> playerHand + _currentDeck.value[0] }
+            _currentDeck.update { currentDeck -> currentDeck.drop(1) }
+            _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
+            addPlayerHand()
+            checkIfPlayerDone()
+        }
+    }
+
+    fun dealerTurn() {
+        _dealerHand.update { dealerHand -> dealerHand + _currentDeck.value[0] }
+        _currentDeck.update {currentDeck -> currentDeck.drop(1)}
+        _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
+        addDealerHand()
+        if (_currentDealerTotal.value < 17) {
+            dealerTurn()
+        } else {
+            if (_currentDealerTotal.value > _currentHandTotal.value && _currentDealerTotal.value < 22) {
+                _currentPoints.update { currentPoints -> currentPoints - 500 }
+            } else if (_currentDealerTotal.value == _currentHandTotal.value) {
+                _currentPoints.update { currentPoints -> currentPoints + 0}
+            } else {
+                _currentPoints.update { currentPoints -> currentPoints + 500 }
+            }
+        }
+    }
+
+    fun stand() {
+        if (!_playerTurnOver.value) {
+            addPlayerHand()
+            _playerTurnOver.update { true }
+            dealerTurn()
+        }
     }
 }

@@ -66,8 +66,13 @@ fun MainMenuScreen(modifier: Modifier, viewModel: AppViewModel, onGoToGameScreen
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = {onGoToGameScreen()}) {Text("Start Game")}
+            Button(onClick = {gameStarter(viewModel, onGoToGameScreen)}) {Text("Start Game")}
             Button(onClick = {onGoToSettingsScreen()}) {Text("Settings")}
         }
     }
+}
+
+fun gameStarter(viewModel: AppViewModel, onGoToGameScreen: () -> Unit) {
+    viewModel.startGame()
+    onGoToGameScreen()
 }

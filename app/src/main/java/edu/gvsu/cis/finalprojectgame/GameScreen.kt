@@ -24,6 +24,10 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -> Unit, onGoToPostGame: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
+    val dealerHand by viewModel.dealerHand.collectAsState()
+    val playerHand by viewModel.playerHand.collectAsState()
+    val playerTurnOver by viewModel.playerTurnOver.collectAsState()
+    val currentPoints by viewModel.currentPoints.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -31,46 +35,60 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Blackjack", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("$currentPoints", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                if (playerTurnOver) {
+                    Button(onClick = { viewModel.startGame() }) { Text("Play Again") }
+                }
+            }
+        }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Dealer", color = Color.White)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp, 120.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("?", fontWeight = FontWeight.Bold)
-                }
-                Box(
-                    modifier = Modifier
-                        .size(80.dp, 120.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("?", fontWeight = FontWeight.Bold)
+                if (!playerTurnOver) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp, 120.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("?", fontWeight = FontWeight.Bold)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp, 120.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("?", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    dealerHand.forEach { card ->
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp, 120.dp)
+                                .background(Color.White, RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("${card?.face} ${card?.suit}", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Player", color = Color.White)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp, 120.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("K of S", fontWeight = FontWeight.Bold)
-                }
-                Box(
-                    modifier = Modifier
-                        .size(80.dp, 120.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("4 of H", fontWeight = FontWeight.Bold)
+                playerHand.forEach { card ->
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp, 120.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("${card?.face} ${card?.suit}", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -78,8 +96,8 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = {}) { Text("Hit") }
-            Button(onClick = {}) { Text("Stand") }
+            Button(onClick = {viewModel.hit()}) { Text("Hit") }
+            Button(onClick = {viewModel.stand()}) { Text("Stand") }
             Button(onClick = {}) { Text("Double") }
             Button(onClick = {}) { Text("Split") }
         }
