@@ -33,6 +33,10 @@ enum class Rank(val value: String) {
     King("K")
 }
 
+data class Hand(
+    val hand: List<CardClass?>
+)
+
 class AppViewModel : ViewModel () {
     private val _deck = MutableStateFlow(listOf<CardClass?>())
     val deck = _deck.asStateFlow()
@@ -66,6 +70,12 @@ class AppViewModel : ViewModel () {
 
     private val _currentPoints = MutableStateFlow<Int>(1000)
     val currentPoints = _currentPoints.asStateFlow()
+
+    private val _numHands = MutableStateFlow<Int>(1)
+    val numHands = _numHands.asStateFlow()
+
+    private val _allHands = MutableStateFlow(listOf<Hand?>())
+    val allHands = _allHands.asStateFlow()
 
     fun createDeck() {
         for (suit in Suit.entries) {
@@ -177,11 +187,11 @@ class AppViewModel : ViewModel () {
     }
 
     fun dealerTurn() {
-        _dealerHand.update { dealerHand -> dealerHand + _currentDeck.value[0] }
-        _currentDeck.update {currentDeck -> currentDeck.drop(1)}
-        _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
         addDealerHand()
         if (_currentDealerTotal.value < 17) {
+            _dealerHand.update { dealerHand -> dealerHand + _currentDeck.value[0] }
+            _currentDeck.update {currentDeck -> currentDeck.drop(1)}
+            _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
             dealerTurn()
         } else {
             if (_currentDealerTotal.value > _currentHandTotal.value && _currentDealerTotal.value < 22) {
@@ -199,6 +209,33 @@ class AppViewModel : ViewModel () {
             addPlayerHand()
             _playerTurnOver.update { true }
             dealerTurn()
+        }
+    }
+
+    fun doubleDown() {
+        if (!_playerTurnOver.value) {
+            _playerHand.update { playerHand -> playerHand + _currentDeck.value[0] }
+            _currentDeck.update { currentDeck -> currentDeck.drop(1) }
+            _cardsDealt.update { cardsDealt -> cardsDealt + 1 }
+            addPlayerHand()
+            if (_currentHandTotal.value < 22) {
+                _playerTurnOver.update { true }
+                dealerTurn()
+            } else {
+                _playerTurnOver.update { true }
+                _currentPoints.update { currentPoints -> currentPoints - 1000 }
+            }
+        }
+    }
+
+    fun split() {
+        if (!_playerTurnOver.value) {
+            _numHands.update { numHands -> numHands + 1 }
+            var tempHand = _playerHand.value
+            repeat(2) {
+                _allHands.update { allHands -> allHands + Hand(listOf(tempHand[0]))}
+                tempHand.drop(1)
+            }
         }
     }
 }
