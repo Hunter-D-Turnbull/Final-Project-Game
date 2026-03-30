@@ -1,0 +1,28 @@
+package edu.gvsu.cis.finalprojectgame
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+
+@Composable
+fun GameScreenDealerHand(dealerHand: List<CardClass?>, reveal: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Dealer", color = Color.White)
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!reveal) {
+                repeat(2) {
+                    CardView(null)
+                }
+            } else {
+                dealerHand.forEach { CardView(it) }
+            }
+        }
+    }
+}

@@ -37,7 +37,7 @@ fun MainMenuScreen(modifier: Modifier, viewModel: AppViewModel, onGoToGameScreen
             horizontalArrangement = Arrangement.Center
         ){
             Text(
-                "Blackjack\nProject",
+                "Blackjack",
                 fontSize = 42.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
