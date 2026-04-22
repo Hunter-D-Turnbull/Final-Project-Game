@@ -19,4 +19,7 @@ sealed class GameRoute {
 
     @Serializable
     data object ToPostGameScreen
+
+    @Serializable
+    data object ToGameDetailScreen
 }

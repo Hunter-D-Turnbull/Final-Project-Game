@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import edu.gvsu.cis.finalprojectgame.ui.theme.CardBlack
 import edu.gvsu.cis.finalprojectgame.ui.theme.MyBlue
 import edu.gvsu.cis.finalprojectgame.ui.theme.MyGold
 import edu.gvsu.cis.finalprojectgame.ui.theme.MyGreen

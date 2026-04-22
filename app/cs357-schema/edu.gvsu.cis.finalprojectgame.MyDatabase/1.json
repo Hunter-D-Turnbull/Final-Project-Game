@@ -1,0 +1,115 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "997cb7bbff41cd4460bf1d2ebf24163e",
+    "entities": [
+      {
+        "tableName": "games",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`gameId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `totalHands` INTEGER NOT NULL, `finalPoints` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "gameId",
+            "columnName": "gameId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalHands",
+            "columnName": "totalHands",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finalPoints",
+            "columnName": "finalPoints",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "gameId"
+          ]
+        }
+      },
+      {
+        "tableName": "hands",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`handId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `gameOwnerId` INTEGER NOT NULL, `handNumber` INTEGER NOT NULL, `result` TEXT NOT NULL, `pointsChange` INTEGER NOT NULL, FOREIGN KEY(`gameOwnerId`) REFERENCES `games`(`gameId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "handId",
+            "columnName": "handId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameOwnerId",
+            "columnName": "gameOwnerId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "handNumber",
+            "columnName": "handNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "result",
+            "columnName": "result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pointsChange",
+            "columnName": "pointsChange",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "handId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_hands_gameOwnerId",
+            "unique": false,
+            "columnNames": [
+              "gameOwnerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hands_gameOwnerId` ON `${TABLE_NAME}` (`gameOwnerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "games",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "gameOwnerId"
+            ],
+            "referencedColumns": [
+              "gameId"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '997cb7bbff41cd4460bf1d2ebf24163e')"
+    ]
+  }
+}

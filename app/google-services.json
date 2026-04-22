@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "283095142377",
+    "project_id": "blackjack-game-final-project",
+    "storage_bucket": "blackjack-game-final-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:283095142377:android:be1bae34d9f9bd89750578",
+        "android_client_info": {
+          "package_name": "edu.gvsu.cis.finalprojectgame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPco7jDArQfKx54NHYmMWNT9AnGz3kfuE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

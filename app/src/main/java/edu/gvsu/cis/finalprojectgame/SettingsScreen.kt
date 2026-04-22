@@ -3,12 +3,9 @@ package edu.gvsu.cis.finalprojectgame
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +28,7 @@ fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelec
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Settings & Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Text("Settings & Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {onGoToColorSelector()}) {Text("Color Selector")}
         Button(onClick = {onBack()}) { Text("Back")}

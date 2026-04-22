@@ -1,13 +1,17 @@
 package edu.gvsu.cis.finalprojectgame
 
+import android.app.Application
 import androidx.compose.ui.graphics.Color
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import edu.gvsu.cis.finalprojectgame.ui.theme.CardBlack
 import edu.gvsu.cis.finalprojectgame.ui.theme.CardRed
 import edu.gvsu.cis.finalprojectgame.ui.theme.MyGreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 enum class Suit(val value: String) {
     Heart("♥"),
@@ -37,7 +41,7 @@ data class Hand(
     val score: Int
 )
 
-class AppViewModel : ViewModel() {
+class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _deck = MutableStateFlow(listOf<CardClass?>())
     val deck = _deck.asStateFlow()
     private val _dealerHand = MutableStateFlow(listOf<CardClass?>())
@@ -64,6 +68,100 @@ class AppViewModel : ViewModel() {
     val allHands = _allHands.asStateFlow()
     private val _currentHandIndex = MutableStateFlow(0)
     val currentHandIndex = _currentHandIndex.asStateFlow()
+    private val _selectedGameId = MutableStateFlow<Int?>(null)
+    private val _currentBet = MutableStateFlow(500)
+    val currentBet = _currentBet.asStateFlow()
+    val _hasPlayed = MutableStateFlow(false)
+    val hasPlayed = _hasPlayed.asStateFlow()
+    val selectedGameId = _selectedGameId.asStateFlow()
+    private var currentGameId: Int? = null
+    val dao: GameDao =
+        (app as MyRoomApplication).myDB.getDao()
+
+    val games = dao.getAllGames()
+
+    fun saveGame(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Insert single game
+            val gameId = dao.insertGame(
+                GameEntity(
+                    totalHands = totalHands,
+                    finalPoints = finalPoints
+                )
+            ).toInt()
+
+            // Insert each hand linked to that game
+            hands.forEachIndexed { index, hand ->
+                val result = when {
+                    hand.score > 21 -> "LOSS"
+                    else -> "WIN" // adjust if you want PUSH logic
+                }
+
+                dao.insertHand(
+                    HandEntity(
+                        gameOwnerId = gameId,
+                        handNumber = index + 1,
+                        result = result,
+                        pointsChange = hand.score
+                    )
+                )
+            }
+        }
+    }
+
+    fun saveHand(hand: Hand) {
+        val gameId = currentGameId ?: return
+
+        val result = when {
+            hand.score > 21 -> "LOSS"
+            else -> "WIN" // or add push logic later
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.insertHand(
+                HandEntity(
+                    gameOwnerId = gameId,
+                    handNumber = _numHands.value + 1,
+                    result = result,
+                    pointsChange = hand.score
+                )
+            )
+        }
+
+        // Update number of hands in ViewModel
+        _numHands.update { it + 1 }
+    }
+
+    fun startNewGameSession() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val gameId = dao.insertGame(
+                GameEntity(
+                    totalHands = 0,
+                    finalPoints = _currentPoints.value
+                )
+            ).toInt()
+
+            currentGameId = gameId
+        }
+
+        _allHands.value = emptyList()
+        _numHands.value = 0
+    }
+
+    fun endGameSession() {
+        val gameId = currentGameId ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val updatedGame = GameEntity(
+                gameId = gameId,
+                totalHands = _numHands.value,
+                finalPoints = _currentPoints.value
+            )
+            dao.updateGame(updatedGame)
+        }
+
+        currentGameId = null
+    }
 
     fun createDeck() {
         _deck.value = emptyList()
@@ -111,6 +209,8 @@ class AppViewModel : ViewModel() {
     }
 
     fun startGame() {
+        startNewGameSession()
+        _hasPlayed.value = false
         _gameInProgress.value = true
         _dealerHand.value = emptyList()
         _allHands.value = listOf(Hand(emptyList(), 0))
@@ -118,6 +218,7 @@ class AppViewModel : ViewModel() {
         _numHands.value = 1
         _playerTurnOver.value = false
         _cardsDealt.value = 0
+        _currentPoints.value = 1000
 
         createDeck()
         shuffleDeck()
@@ -133,6 +234,37 @@ class AppViewModel : ViewModel() {
         }
         addDealerHand()
         checkIfPlayerDone()
+    }
+
+    fun playAgain() {
+        if (_currentBet.value > _currentPoints.value) {
+            _currentBet.value = _currentPoints.value
+        }
+        _hasPlayed.value = false
+        _dealerHand.value = emptyList()
+        _allHands.value = listOf(Hand(emptyList(), 0))
+        _currentHandIndex.value = 0
+        _numHands.value = 1
+        _playerTurnOver.value = false
+        _cardsDealt.value = 0
+
+        shuffleDeck()
+        _currentDeck.value = _deck.value
+
+        repeat(2) {
+            val card = drawCard()
+            val current = _allHands.value[0].hand + card
+            updateHand(0, current)
+        }
+        repeat(2) {
+            _dealerHand.update { it + drawCard() }
+        }
+        addDealerHand()
+        checkIfPlayerDone()
+    }
+
+    fun endGame() {
+        endGameSession()
     }
 
     fun checkIfPlayerDone() {
@@ -156,6 +288,7 @@ class AppViewModel : ViewModel() {
     }
 
     fun hit() {
+        _hasPlayed.value = true
         if (_playerTurnOver.value) return
         val currentHand = getCurrentHand() ?: return
         val updatedHand = currentHand.hand + drawCard()
@@ -164,6 +297,7 @@ class AppViewModel : ViewModel() {
     }
 
     fun stand() {
+        _hasPlayed.value = true
         if (_playerTurnOver.value) return
 
         if (_currentHandIndex.value < _numHands.value - 1) {
@@ -176,14 +310,16 @@ class AppViewModel : ViewModel() {
     }
 
     fun doubleDown() {
+        _hasPlayed.value = true
         if (_playerTurnOver.value) return
         val currentHand = getCurrentHand() ?: return
         val updatedHand = currentHand.hand + drawCard()
+        _currentBet.value *= 2
 
         updateHand(_currentHandIndex.value, updatedHand)
 
         if (_currentHandTotal.value > 21) {
-            _currentPoints.update { it - 1000 }
+            _currentPoints.update { it - _currentBet.value }
         }
 
         if (_currentHandIndex.value < _numHands.value - 1) {
@@ -196,6 +332,7 @@ class AppViewModel : ViewModel() {
     }
 
     fun split() {
+        _hasPlayed.value = true
         if (_playerTurnOver.value) return
 
         val hand = getCurrentHand()?.hand ?: return
@@ -220,22 +357,59 @@ class AppViewModel : ViewModel() {
             _dealerHand.update { it + drawCard() }
             addDealerHand()
         }
+
         val dealerScore = _currentDealerTotal.value
+
+        // Update player points
         _allHands.value.forEach { hand ->
             val playerScore = hand.score
             when {
-                playerScore > 21 -> _currentPoints.update { it - 500 }
-                dealerScore > 21 -> _currentPoints.update { it + 500 }
-                dealerScore > playerScore -> _currentPoints.update { it - 500 }
-                dealerScore < playerScore -> _currentPoints.update { it + 500 }
+                playerScore > 21 -> _currentPoints.update { it - _currentBet.value }
+                dealerScore > 21 -> _currentPoints.update { it + _currentBet.value }
+                dealerScore > playerScore -> _currentPoints.update { it - _currentBet.value }
+                dealerScore < playerScore -> _currentPoints.update { it + _currentBet.value }
             }
+        }
+
+        // Save the game and all hands once, after the dealer is done
+        _allHands.value.forEach { hand ->
+            saveHand(hand)
         }
     }
 
     fun currentHandIndexPlusOne() {
         _currentHandIndex.update { value -> value + 1 }
     }
+
     fun currentHandIndexMinusOne() {
         _currentHandIndex.update { value -> value - 1 }
+    }
+
+    fun selectGame(gameId: Int) {
+        _selectedGameId.value = gameId
+    }
+
+    fun plustwentyfive() {
+        if ((_currentBet.value + 25) < _currentPoints.value) {
+            _currentBet.value += 25
+        }
+    }
+
+    fun plushundred() {
+        if ((_currentBet.value + 100) < _currentPoints.value) {
+            _currentBet.value += 100
+        }
+    }
+
+    fun minustwentyfive() {
+        if ((_currentBet.value - 25) > 0) {
+            _currentBet.value -= 25
+        }
+    }
+
+    fun minushundred() {
+        if ((_currentBet.value - 100) > 0) {
+            _currentBet.value -= 100
+        }
     }
 }

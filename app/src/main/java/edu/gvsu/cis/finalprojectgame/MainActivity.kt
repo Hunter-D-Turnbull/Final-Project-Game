@@ -8,11 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -59,11 +55,17 @@ class MainActivity : ComponentActivity() {
                                 onBack = {navc.popBackStack()})
                         }
                         composable<GameRoute.ToPostGameScreen> {
-                            PostGameScreen(modifier = Modifier.padding(innerPadding),
+                            PostGameScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onGoToSettings = { navc.navigate(GameRoute.ToSettingsScreen) },
+                                onBack = { navc.popBackStack(route = GameRoute.ToMainMenuScreen, inclusive = false) },
+                                onGoToHandDetails = { navc.navigate(GameRoute.ToGameDetailScreen)})
+                        }
+                        composable<GameRoute.ToGameDetailScreen> {
+                            GameDetailScreen(modifier = Modifier.padding(innerPadding),
                                 viewModel,
-                                onGoToSettings = {navc.navigate(GameRoute.ToSettingsScreen)},
-                                onBack = {navc.popBackStack(route = GameRoute.ToMainMenuScreen, inclusive = false)}
-                            )
+                                onBack = {navc.popBackStack()})
                         }
                     }
                 }
