@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+import com.google.firebase.auth.EmailAuthProvider
 
 enum class Suit(val value: String) {
     Heart("♥"),
@@ -79,12 +81,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var currentGameId: Int? = null
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
-
+    private val _isUserSignedIn = MutableStateFlow(auth.currentUser != null)
+    val isUserSignedIn = _isUserSignedIn.asStateFlow()
+    private val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        _isUserSignedIn.value = firebaseAuth.currentUser != null
+    }
     val currentUser get() = auth.currentUser
     val dao: GameDao =
         (app as MyRoomApplication).myDB.getDao()
 
     val games = dao.getAllGames()
+
+    init {
+        auth.addAuthStateListener(authListener)
+    }
 
     fun saveGame(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -108,66 +118,103 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                         gameOwnerId = gameId,
                         handNumber = index + 1,
                         result = result,
-                        pointsChange = hand.score
+                        pointsChange = _currentBet.value
                     )
                 )
             }
         }
     }
 
-    fun signUp(email: String, password: String, name: String, onResult: (Boolean, String?) -> Unit) {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+    fun signUp(
+        email: String,
+        password: String,
+        name: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val uid = result.user?.uid ?: throw Exception("User creation failed")
 
-                    // Save user name in Firestore
-                    val userData = mapOf(
-                        "name" to name,
-                        "email" to email
-                    )
+                val userData = mapOf(
+                    "name" to name,
+                    "email" to email
+                )
 
-                    firestore.collection("users")
-                        .document(uid)
-                        .set(userData)
-                        .addOnSuccessListener { onResult(true, null) }
-                        .addOnFailureListener { onResult(false, it.message) }
+                firestore.collection("users")
+                    .document(uid)
+                    .set(userData)
+                    .await()
 
-                } else {
-                    onResult(false, task.exception?.message)
-                }
+                onResult(true, null)
+
+            } catch (e: Exception) {
+                onResult(false, e.message)
             }
+        }
     }
 
     fun signIn(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    onResult(true, null)
-                } else {
-                    onResult(false, task.exception?.message)
-                }
+        viewModelScope.launch {
+            try {
+                auth.signInWithEmailAndPassword(email, password).await()
+                onResult(true, null)
+            } catch (e: Exception) {
+                onResult(false, e.message)
             }
+        }
     }
 
     fun signOut() {
         auth.signOut()
     }
 
+    fun changePassword(
+        oldPassword: String,
+        newPassword: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        val user = auth.currentUser
+        val email = user?.email
+
+        if (user == null || email == null) {
+            onResult(false, "User not logged in")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                // Re-authenticate with old password
+                val credential = EmailAuthProvider.getCredential(email, oldPassword)
+                user.reauthenticate(credential).await()
+
+                // Update to new password
+                user.updatePassword(newPassword).await()
+
+                onResult(true, null)
+
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
+
     fun saveGameToFirestore(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
         val uid = auth.currentUser?.uid ?: return
 
-        val gameData = mapOf(
-            "finalPoints" to finalPoints,
-            "totalHands" to totalHands,
-            "timestamp" to System.currentTimeMillis()
-        )
+        viewModelScope.launch {
+            try {
+                val gameData = mapOf(
+                    "finalPoints" to finalPoints,
+                    "totalHands" to totalHands,
+                    "timestamp" to System.currentTimeMillis()
+                )
 
-        firestore.collection("users")
-            .document(uid)
-            .collection("history")
-            .add(gameData)
-            .addOnSuccessListener { docRef ->
+                val docRef = firestore.collection("users")
+                    .document(uid)
+                    .collection("history")
+                    .add(gameData)
+                    .await()
 
                 hands.forEachIndexed { index, hand ->
                     val handData = mapOf(
@@ -175,9 +222,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                         "score" to hand.score
                     )
 
-                    docRef.collection("hands").add(handData)
+                    docRef.collection("hands")
+                        .add(handData)
+                        .await()
                 }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+        }
     }
 
     fun saveHand(hand: Hand) {
@@ -482,5 +535,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if ((_currentBet.value - 100) > 0) {
             _currentBet.value -= 100
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        auth.removeAuthStateListener(authListener)
     }
 }

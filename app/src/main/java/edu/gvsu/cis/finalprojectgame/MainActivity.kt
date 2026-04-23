@@ -48,7 +48,8 @@ class MainActivity : ComponentActivity() {
                                 onGoToPostGame = {navc.navigate(GameRoute.ToPostGameScreen)},
                                 onBack = {navc.popBackStack()},
                                 onGoToSignUp = {navc.navigate(GameRoute.toSignUpScreen)},
-                                onGoToLogin = {navc.navigate(GameRoute.toLoginScreen)}
+                                onGoToLogin = {navc.navigate(GameRoute.toLoginScreen)},
+                                onGoToAccount = {navc.navigate(GameRoute.ToAccountScreen)}
                             )
                         }
                         composable<GameRoute.ToColorSelectorScreen> {
@@ -81,7 +82,22 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 onBack = {navc.popBackStack()},
                                 onLoginSuccess = {navc.popBackStack()},
-                                onGoToSignup = {navc.navigate(GameRoute.toSignUpScreen)})
+                                onGoToSignup = {navc.navigate(GameRoute.toSignUpScreen)}
+                            )
+                        }
+                        composable<GameRoute.ToAccountScreen> {
+                            AccountInfoScreen(modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()},
+                                onToChangePassword = {navc.navigate(GameRoute.ToPasswordChange)}
+                            )
+                        }
+                        composable<GameRoute.ToPasswordChange> {
+                            ChangePasswordScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()}
+                            )
                         }
                     }
                 }

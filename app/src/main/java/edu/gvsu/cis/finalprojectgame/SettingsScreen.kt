@@ -19,9 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit) {
+fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit, onGoToAccount: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
     val gameInProgress by viewModel.gameInProgress.collectAsState()
+    val isSignedIn by viewModel.isUserSignedIn.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -32,8 +33,12 @@ fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelec
         Text("Settings & Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(modifier = Modifier.height(4.dp))
         Button(onClick = {onGoToColorSelector()}) {Text("Color Selector")}
-        Button(onClick = {onGoToLogin()}) {Text("Login")}
-        Button(onClick = {onGoToSignUp()}) {Text("Sign Up")}
+        if (!isSignedIn) {
+            Button(onClick = { onGoToLogin() }) { Text("Login") }
+            Button(onClick = { onGoToSignUp() }) { Text("Sign Up") }
+        } else {
+            Button(onClick = {onGoToAccount()}) {Text("User Account")}
+        }
         Button(onClick = {onBack()}) { Text("Back")}
         if(gameInProgress) {
             Button(onClick = { onGoToPostGame() }) { Text("End Game") }
