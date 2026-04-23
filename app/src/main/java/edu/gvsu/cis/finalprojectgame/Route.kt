@@ -22,4 +22,10 @@ sealed class GameRoute {
 
     @Serializable
     data object ToGameDetailScreen
+
+    @Serializable
+    data object toSignUpScreen
+
+    @Serializable
+    data object toLoginScreen
 }

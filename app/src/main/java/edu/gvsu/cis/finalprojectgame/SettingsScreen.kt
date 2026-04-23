@@ -19,8 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
+    val gameInProgress by viewModel.gameInProgress.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -29,9 +30,13 @@ fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelec
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Settings & Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Button(onClick = {onGoToColorSelector()}) {Text("Color Selector")}
+        Button(onClick = {onGoToLogin()}) {Text("Login")}
+        Button(onClick = {onGoToSignUp()}) {Text("Sign Up")}
         Button(onClick = {onBack()}) { Text("Back")}
-        Button(onClick = {onGoToPostGame()}) {Text("End Game")}
+        if(gameInProgress) {
+            Button(onClick = { onGoToPostGame() }) { Text("End Game") }
+        }
     }
 }

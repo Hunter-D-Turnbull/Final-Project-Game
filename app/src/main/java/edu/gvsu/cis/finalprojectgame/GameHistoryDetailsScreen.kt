@@ -46,40 +46,43 @@ fun GameDetailScreen(
 
     Column(
         modifier = Modifier
-            .padding(top = 32.dp)
             .fillMaxSize()
             .background(color = color),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(
-            onClick = onBack,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+        Column(
+            modifier = Modifier.padding(top = 48.dp)
         ) {
-            Text("Back")
-        }
+            Button(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Back")
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Game Hands", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Game Hands", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(hands) { hand ->
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(hands) { hand ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Hand ${hand.handNumber}")
-                        Text("Result: ${hand.result}")
-                        Text("Points: ${hand.pointsChange}")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Text("Hand ${hand.handNumber}")
+                            Text("Result: ${hand.result}")
+                            Text("Points: ${hand.pointsChange}")
+                        }
                     }
                 }
             }

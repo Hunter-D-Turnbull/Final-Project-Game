@@ -46,7 +46,9 @@ class MainActivity : ComponentActivity() {
                                 viewModel,
                                 onGoToColorSelector = {navc.navigate(GameRoute.ToColorSelectorScreen)},
                                 onGoToPostGame = {navc.navigate(GameRoute.ToPostGameScreen)},
-                                onBack = {navc.popBackStack()}
+                                onBack = {navc.popBackStack()},
+                                onGoToSignUp = {navc.navigate(GameRoute.toSignUpScreen)},
+                                onGoToLogin = {navc.navigate(GameRoute.toLoginScreen)}
                             )
                         }
                         composable<GameRoute.ToColorSelectorScreen> {
@@ -66,6 +68,20 @@ class MainActivity : ComponentActivity() {
                             GameDetailScreen(modifier = Modifier.padding(innerPadding),
                                 viewModel,
                                 onBack = {navc.popBackStack()})
+                        }
+                        composable<GameRoute.toSignUpScreen> {
+                            SignupScreen(modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()},
+                                onDone = {navc.popBackStack()}
+                            )
+                        }
+                        composable<GameRoute.toLoginScreen> {
+                            LoginScreen(modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()},
+                                onLoginSuccess = {navc.popBackStack()},
+                                onGoToSignup = {navc.navigate(GameRoute.toSignUpScreen)})
                         }
                     }
                 }

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 enum class Suit(val value: String) {
     Heart("♥"),
@@ -75,6 +77,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val hasPlayed = _hasPlayed.asStateFlow()
     val selectedGameId = _selectedGameId.asStateFlow()
     private var currentGameId: Int? = null
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
+
+    val currentUser get() = auth.currentUser
     val dao: GameDao =
         (app as MyRoomApplication).myDB.getDao()
 
@@ -94,7 +100,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             hands.forEachIndexed { index, hand ->
                 val result = when {
                     hand.score > 21 -> "LOSS"
-                    else -> "WIN" // adjust if you want PUSH logic
+                    else -> "WIN"
                 }
 
                 dao.insertHand(
@@ -107,6 +113,71 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
         }
+    }
+
+    fun signUp(email: String, password: String, name: String, onResult: (Boolean, String?) -> Unit) {
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+
+                    // Save user name in Firestore
+                    val userData = mapOf(
+                        "name" to name,
+                        "email" to email
+                    )
+
+                    firestore.collection("users")
+                        .document(uid)
+                        .set(userData)
+                        .addOnSuccessListener { onResult(true, null) }
+                        .addOnFailureListener { onResult(false, it.message) }
+
+                } else {
+                    onResult(false, task.exception?.message)
+                }
+            }
+    }
+
+    fun signIn(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(true, null)
+                } else {
+                    onResult(false, task.exception?.message)
+                }
+            }
+    }
+
+    fun signOut() {
+        auth.signOut()
+    }
+
+    fun saveGameToFirestore(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
+        val uid = auth.currentUser?.uid ?: return
+
+        val gameData = mapOf(
+            "finalPoints" to finalPoints,
+            "totalHands" to totalHands,
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        firestore.collection("users")
+            .document(uid)
+            .collection("history")
+            .add(gameData)
+            .addOnSuccessListener { docRef ->
+
+                hands.forEachIndexed { index, hand ->
+                    val handData = mapOf(
+                        "handNumber" to index + 1,
+                        "score" to hand.score
+                    )
+
+                    docRef.collection("hands").add(handData)
+                }
+            }
     }
 
     fun saveHand(hand: Hand) {
