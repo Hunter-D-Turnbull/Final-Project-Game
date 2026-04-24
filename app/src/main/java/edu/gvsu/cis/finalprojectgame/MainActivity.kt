@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                             SignupScreen(modifier = Modifier.padding(innerPadding),
                                 viewModel = viewModel,
                                 onBack = {navc.popBackStack()},
-                                onDone = {navc.popBackStack()}
+                                onDone = {navc.popBackStack(route = GameRoute.ToSettingsScreen, inclusive = false)}
                             )
                         }
                         composable<GameRoute.toLoginScreen> {
