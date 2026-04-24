@@ -925,7 +925,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 else -> false // push counts as not a win
             }
 
-            // Update points (your existing logic, but cleaner)
+            // Update points
             when {
                 playerScore > 21 -> _currentPoints.update { it - _currentBet.value }
                 dealerScore > 21 -> _currentPoints.update { it + _currentBet.value }
