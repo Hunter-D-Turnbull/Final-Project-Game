@@ -418,7 +418,7 @@ Congratulations, you should now have everything you need to use Firebase and Fir
 ## Helpful links
 
 Firebase: https://firebase.google.com/  
-Google Cloud Services: https://cloud.google.com/
-Firestore Intro and Tutorial: https://firebase.google.com/docs/firestore
-Firebase Fundamentals Guide: https://firebase.google.com/docs/guides
+Google Cloud Services: https://cloud.google.com/  
+Firestore Intro and Tutorial: https://firebase.google.com/docs/firestore  
+Firebase Fundamentals Guide: https://firebase.google.com/docs/guides  
 Firebase Tutorial Video: https://www.youtube.com/watch?v=_L8j-ZC83y4
