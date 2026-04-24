@@ -28,11 +28,7 @@ import androidx.compose.ui.unit.sp
 
 
 @Composable
-fun GameDetailScreen(
-    modifier: Modifier = Modifier,
-    viewModel: AppViewModel,
-    onBack: () -> Unit
-) {
+fun GameDetailScreen(modifier: Modifier = Modifier, viewModel: AppViewModel, onBack: () -> Unit) {
     val selectedGameId by viewModel.selectedGameId.collectAsState()
     val color by viewModel.currentBackgroundColor.collectAsState()
 

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit, onGoToAccount: () -> Unit) {
+fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit, onGoToAccount: () -> Unit, onGoToLocalHistory: () -> Unit, onGoToRemoteGameHistory: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
     val gameInProgress by viewModel.gameInProgress.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
@@ -31,14 +31,15 @@ fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelec
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Settings & Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        Spacer(modifier = Modifier.height(4.dp))
         Button(onClick = {onGoToColorSelector()}) {Text("Color Selector")}
         if (!isSignedIn) {
             Button(onClick = { onGoToLogin() }) { Text("Login") }
             Button(onClick = { onGoToSignUp() }) { Text("Sign Up") }
         } else {
             Button(onClick = {onGoToAccount()}) {Text("User Account")}
+            Button(onClick = {onGoToRemoteGameHistory()}) {Text("Remote History")}
         }
+        Button(onClick = {onGoToLocalHistory()}) {Text("Local History")}
         Button(onClick = {onBack()}) { Text("Back")}
         if(gameInProgress) {
             Button(onClick = { onGoToPostGame() }) { Text("End Game") }

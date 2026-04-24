@@ -45,6 +45,19 @@ data class Hand(
     val score: Int
 )
 
+data class RemoteGame(
+    val id: String = "",
+    val finalPoints: Int = 0,
+    val totalHands: Int = 0,
+    val timestamp: Long = 0
+)
+
+data class RemoteHand(
+    val handNumber: Int = 0,
+    val result: String = "",
+    val pointsChange: Int = 0
+)
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _deck = MutableStateFlow(listOf<CardClass?>())
     val deck = _deck.asStateFlow()
@@ -68,6 +81,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val currentPoints = _currentPoints.asStateFlow()
     private val _numHands = MutableStateFlow(1)
     val numHands = _numHands.asStateFlow()
+    private val _totalHandsPlayed = MutableStateFlow(1)
+    val totalHandsPlayed = _totalHandsPlayed.asStateFlow()
     private val _allHands = MutableStateFlow(listOf<Hand>())
     val allHands = _allHands.asStateFlow()
     private val _currentHandIndex = MutableStateFlow(0)
@@ -83,10 +98,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val firestore = FirebaseFirestore.getInstance()
     private val _isUserSignedIn = MutableStateFlow(auth.currentUser != null)
     val isUserSignedIn = _isUserSignedIn.asStateFlow()
+    private var currentRemoteGameId: String? = null
     private val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         _isUserSignedIn.value = firebaseAuth.currentUser != null
     }
+    private val _remoteGames = MutableStateFlow<List<RemoteGame>>(emptyList())
+    val remoteGames = _remoteGames.asStateFlow()
+    private val _remoteHands = MutableStateFlow<List<RemoteHand>>(emptyList())
+    val remoteHands = _remoteHands.asStateFlow()
     val currentUser get() = auth.currentUser
+    private val _selectedRemoteGameId = MutableStateFlow<String?>(null)
+    val selectedRemoteGameId = _selectedRemoteGameId.asStateFlow()
     val dao: GameDao =
         (app as MyRoomApplication).myDB.getDao()
 
@@ -94,35 +116,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         auth.addAuthStateListener(authListener)
-    }
-
-    fun saveGame(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // Insert single game
-            val gameId = dao.insertGame(
-                GameEntity(
-                    totalHands = totalHands,
-                    finalPoints = finalPoints
-                )
-            ).toInt()
-
-            // Insert each hand linked to that game
-            hands.forEachIndexed { index, hand ->
-                val result = when {
-                    hand.score > 21 -> "LOSS"
-                    else -> "WIN"
-                }
-
-                dao.insertHand(
-                    HandEntity(
-                        gameOwnerId = gameId,
-                        handNumber = index + 1,
-                        result = result,
-                        pointsChange = _currentBet.value
-                    )
-                )
-            }
-        }
     }
 
     fun signUp(
@@ -199,33 +192,56 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun saveGameToFirestore(finalPoints: Int, totalHands: Int, hands: List<Hand>) {
+    fun fetchRemoteGames() {
         val uid = auth.currentUser?.uid ?: return
 
         viewModelScope.launch {
             try {
-                val gameData = mapOf(
-                    "finalPoints" to finalPoints,
-                    "totalHands" to totalHands,
-                    "timestamp" to System.currentTimeMillis()
-                )
-
-                val docRef = firestore.collection("users")
+                val snapshot = firestore.collection("users")
                     .document(uid)
                     .collection("history")
-                    .add(gameData)
+                    .get()
                     .await()
 
-                hands.forEachIndexed { index, hand ->
-                    val handData = mapOf(
-                        "handNumber" to index + 1,
-                        "score" to hand.score
+                val games = snapshot.documents.map { doc ->
+                    RemoteGame(
+                        id = doc.id,
+                        finalPoints = doc.getLong("finalPoints")?.toInt() ?: 0,
+                        totalHands = doc.getLong("totalHands")?.toInt() ?: 0,
+                        timestamp = doc.getLong("timestamp") ?: 0
                     )
+                }.sortedByDescending { it.timestamp }
 
-                    docRef.collection("hands")
-                        .add(handData)
-                        .await()
-                }
+                _remoteGames.value = games
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun fetchRemoteHands(gameId: String) {
+        val uid = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("users")
+                    .document(uid)
+                    .collection("history")
+                    .document(gameId)
+                    .collection("hands")
+                    .get()
+                    .await()
+
+                val hands = snapshot.documents.map { doc ->
+                    RemoteHand(
+                        handNumber = doc.getLong("handNumber")?.toInt() ?: 0,
+                        pointsChange = doc.getLong("pointsChange")?.toInt() ?: 0,
+                        result = doc.getString("result") ?: "UNKNOWN"
+                    )
+                }.sortedBy { it.handNumber }
+
+                _remoteHands.value = hands
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -245,15 +261,97 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             dao.insertHand(
                 HandEntity(
                     gameOwnerId = gameId,
-                    handNumber = _numHands.value + 1,
+                    handNumber = _totalHandsPlayed.value,
                     result = result,
-                    pointsChange = hand.score
+                    pointsChange = _currentBet.value
                 )
             )
         }
 
         // Update number of hands in ViewModel
         _numHands.update { it + 1 }
+    }
+
+    fun startRemoteGameSession() {
+        val uid = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            try {
+                val gameData = mapOf(
+                    "totalHands" to 0,
+                    "finalPoints" to _currentPoints.value,
+                    "timestamp" to System.currentTimeMillis()
+                )
+
+                val docRef = firestore.collection("users")
+                    .document(uid)
+                    .collection("history")
+                    .add(gameData)
+                    .await()
+
+                currentRemoteGameId = docRef.id
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun endRemoteGameSession() {
+        val uid = auth.currentUser?.uid ?: return
+        val gameId = currentRemoteGameId ?: return
+
+        viewModelScope.launch {
+            try {
+                val updatedGame = mapOf(
+                    "totalHands" to _totalHandsPlayed.value,
+                    "finalPoints" to _currentPoints.value
+                )
+
+                firestore.collection("users")
+                    .document(uid)
+                    .collection("history")
+                    .document(gameId)
+                    .update(updatedGame)
+                    .await()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        currentRemoteGameId = null
+    }
+
+    fun saveRemoteHand(hand: Hand) {
+        val uid = auth.currentUser?.uid ?: return
+        val gameId = currentRemoteGameId ?: return
+
+        val result = when {
+            hand.score > 21 -> "LOSS"
+            else -> "WIN"
+        }
+
+        viewModelScope.launch {
+            try {
+                val handData = mapOf(
+                    "handNumber" to _totalHandsPlayed.value,
+                    "result" to result,
+                    "pointsChange" to _currentBet.value
+                )
+
+                firestore.collection("users")
+                    .document(uid)
+                    .collection("history")
+                    .document(gameId)
+                    .collection("hands")
+                    .add(handData)
+                    .await()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun startNewGameSession() {
@@ -278,7 +376,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             val updatedGame = GameEntity(
                 gameId = gameId,
-                totalHands = _numHands.value,
+                totalHands = _totalHandsPlayed.value,
                 finalPoints = _currentPoints.value
             )
             dao.updateGame(updatedGame)
@@ -334,15 +432,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startGame() {
         startNewGameSession()
+        startRemoteGameSession()
         _hasPlayed.value = false
         _gameInProgress.value = true
         _dealerHand.value = emptyList()
         _allHands.value = listOf(Hand(emptyList(), 0))
         _currentHandIndex.value = 0
         _numHands.value = 1
+        _totalHandsPlayed.value = 1
         _playerTurnOver.value = false
         _cardsDealt.value = 0
         _currentPoints.value = 1000
+        _currentBet.value = 500
 
         createDeck()
         shuffleDeck()
@@ -369,6 +470,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _allHands.value = listOf(Hand(emptyList(), 0))
         _currentHandIndex.value = 0
         _numHands.value = 1
+        _totalHandsPlayed.value += 1
         _playerTurnOver.value = false
         _cardsDealt.value = 0
 
@@ -389,6 +491,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun endGame() {
         endGameSession()
+        endRemoteGameSession()
+        _gameInProgress.value = false
     }
 
     fun checkIfPlayerDone() {
@@ -498,6 +602,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         // Save the game and all hands once, after the dealer is done
         _allHands.value.forEach { hand ->
             saveHand(hand)
+            saveRemoteHand(hand)
         }
     }
 
@@ -511,6 +616,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun selectGame(gameId: Int) {
         _selectedGameId.value = gameId
+    }
+
+    fun selectRemoteGame(gameId: String) {
+        _selectedRemoteGameId.value = gameId
     }
 
     fun plustwentyfive() {

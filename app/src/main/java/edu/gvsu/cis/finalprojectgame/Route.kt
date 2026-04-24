@@ -18,7 +18,7 @@ sealed class GameRoute {
     data object ToColorSelectorScreen
 
     @Serializable
-    data object ToPostGameScreen
+    data object ToLocalGameHistory
 
     @Serializable
     data object ToGameDetailScreen
@@ -34,4 +34,13 @@ sealed class GameRoute {
 
     @Serializable
     data object ToPasswordChange
+
+    @Serializable
+    data object ToPostGameScreen
+
+    @Serializable
+    data object ToRemoteGameHistory
+
+    @Serializable
+    data object ToRemoteGameHistoryDetails
 }

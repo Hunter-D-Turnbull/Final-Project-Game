@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import edu.gvsu.cis.finalprojectgame.ui.theme.FinalProjectGameTheme
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
     val viewModel by viewModels<AppViewModel>()
@@ -49,7 +52,9 @@ class MainActivity : ComponentActivity() {
                                 onBack = {navc.popBackStack()},
                                 onGoToSignUp = {navc.navigate(GameRoute.toSignUpScreen)},
                                 onGoToLogin = {navc.navigate(GameRoute.toLoginScreen)},
-                                onGoToAccount = {navc.navigate(GameRoute.ToAccountScreen)}
+                                onGoToAccount = {navc.navigate(GameRoute.ToAccountScreen)},
+                                onGoToLocalHistory = {navc.navigate(GameRoute.ToLocalGameHistory)},
+                                onGoToRemoteGameHistory = {navc.navigate(GameRoute.ToRemoteGameHistory)}
                             )
                         }
                         composable<GameRoute.ToColorSelectorScreen> {
@@ -57,17 +62,16 @@ class MainActivity : ComponentActivity() {
                                 viewModel,
                                 onBack = {navc.popBackStack()})
                         }
-                        composable<GameRoute.ToPostGameScreen> {
-                            PostGameScreen(
+                        composable<GameRoute.ToLocalGameHistory> {
+                            LocalGameHistory(
                                 modifier = Modifier.padding(innerPadding),
                                 viewModel = viewModel,
-                                onGoToSettings = { navc.navigate(GameRoute.ToSettingsScreen) },
-                                onBack = { navc.popBackStack(route = GameRoute.ToMainMenuScreen, inclusive = false) },
+                                onBack = { navc.popBackStack()},
                                 onGoToHandDetails = { navc.navigate(GameRoute.ToGameDetailScreen)})
                         }
                         composable<GameRoute.ToGameDetailScreen> {
                             GameDetailScreen(modifier = Modifier.padding(innerPadding),
-                                viewModel,
+                                viewModel = viewModel,
                                 onBack = {navc.popBackStack()})
                         }
                         composable<GameRoute.toSignUpScreen> {
@@ -94,6 +98,28 @@ class MainActivity : ComponentActivity() {
                         }
                         composable<GameRoute.ToPasswordChange> {
                             ChangePasswordScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()}
+                            )
+                        }
+                        composable<GameRoute.ToPostGameScreen> {
+                            PostGameScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onMainMenu = {navc.popBackStack(route = GameRoute.ToMainMenuScreen, inclusive = false)}
+                            )
+                        }
+                        composable<GameRoute.ToRemoteGameHistory> {
+                            RemoteGameHistoryScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()},
+                                onGoToHandDetails = {navc.navigate(GameRoute.ToRemoteGameHistoryDetails)}
+                            )
+                        }
+                        composable<GameRoute.ToRemoteGameHistoryDetails> {
+                            RemoteGameDetailScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 viewModel = viewModel,
                                 onBack = {navc.popBackStack()}
