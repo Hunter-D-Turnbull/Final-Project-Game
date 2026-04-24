@@ -58,6 +58,9 @@ interface GameDao {
 
     @androidx.room.Update
     suspend fun updateGame(game: GameEntity)
+
+    @Query("DELETE FROM games")
+    suspend fun deleteAllGames()
 }
 
 @Database(

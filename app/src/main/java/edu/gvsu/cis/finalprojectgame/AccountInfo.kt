@@ -20,7 +20,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun AccountInfoScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit, onToChangePassword: () -> Unit) {
+fun AccountInfoScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit, onToChangePassword: () -> Unit, onToAchievements: () -> Unit, onToAccountDeletion: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
     val user = viewModel.currentUser
 
@@ -66,18 +66,22 @@ fun AccountInfoScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () ->
             fontWeight = FontWeight.Bold,
             color = Color.White)
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { onBack() }) {
-                Text("Back")
-            }
-            Button(onClick = {onToChangePassword()}) {
-                Text("Change Password")
-            }
-            Button(onClick = {viewModel.signOut()
-                onBack()
-            }) {
-                Text("Sign Out")
-            }
+        Button(onClick = { onBack() }) {
+            Text("Back")
+        }
+        Button(onClick = {onToAchievements()}) {
+            Text("Achievements")
+        }
+        Button(onClick = {onToChangePassword()}) {
+            Text("Change Password")
+        }
+        Button(onClick = {viewModel.signOut()
+            onBack()
+        }) {
+            Text("Sign Out")
+        }
+        Button(onClick = {onToAccountDeletion()}) {
+            Text("Delete Account")
         }
     }
 }

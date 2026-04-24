@@ -43,4 +43,13 @@ sealed class GameRoute {
 
     @Serializable
     data object ToRemoteGameHistoryDetails
+
+    @Serializable
+    data object ToAchievementsScreen
+
+    @Serializable
+    data object ToLeaderboardScreen
+
+    @Serializable
+    data object ToAccountDeletionScreen
 }

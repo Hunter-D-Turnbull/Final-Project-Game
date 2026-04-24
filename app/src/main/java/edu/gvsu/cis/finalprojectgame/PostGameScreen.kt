@@ -23,6 +23,7 @@ fun PostGameScreen(modifier: Modifier = Modifier, viewModel: AppViewModel, onMai
     val color by viewModel.currentBackgroundColor.collectAsState()
     val finalPoints by viewModel.currentPoints.collectAsState()
     val handsPlayed by viewModel.totalHandsPlayed.collectAsState()
+    val actualHandsPlayed = handsPlayed-1
 
     Column(
         modifier = Modifier
@@ -48,7 +49,7 @@ fun PostGameScreen(modifier: Modifier = Modifier, viewModel: AppViewModel, onMai
         )
 
         Text(
-            text = "Hands Played: $handsPlayed",
+            text = "Hands Played: $actualHandsPlayed",
             fontSize = 22.sp,
             color = Color.White
         )

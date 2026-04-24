@@ -31,9 +31,16 @@ fun RemoteGameHistoryScreen(modifier: Modifier,viewModel: AppViewModel, onBack: 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(modifier = Modifier.padding(top = 48.dp)) {
-
-            Button(onClick = onBack) {
-                Text("Back")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(onClick = onBack) {
+                    Text("Back")
+                }
+                Button(onClick = { viewModel.clearAllRemoteHistory() }) {
+                    Text("Clear Remote History")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -9,38 +9,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit, onLoginSuccess: () -> Unit, onGoToSignup: () -> Unit) {
+fun AccountDeletionScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit, onDeleted: () -> Unit) {
+    val color by viewModel.currentBackgroundColor.collectAsState()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
+    var message by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) }
-
-    val color by viewModel.currentBackgroundColor.collectAsState()
 
     Column(
         modifier = Modifier
@@ -53,24 +43,27 @@ fun LoginScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit,
             modifier = Modifier.padding(top = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.Center
-            ){
-                Text(
-                    "Login",
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+
+            // Title
+            Text(
+                text = "Delete Account",
+                fontSize = 42.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                TextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
+                // Email field
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") }
+                )
 
+                // Password field with visibility toggle
                 TextField(
                     value = password,
                     onValueChange = { password = it },
@@ -88,34 +81,33 @@ fun LoginScreen(modifier: Modifier, viewModel: AppViewModel, onBack: () -> Unit,
                     }
                 )
 
-                errorMessage?.let {
+                message?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(text = it, color = Color.Red)
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Buttons row
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                Button(onClick = { onGoToSignup() }) {
-                    Text("Sign Up")
+                Button(onClick = onBack) {
+                    Text("Cancel")
                 }
 
-                Button(onClick = {
-                    viewModel.signIn(email, password) { success, error ->
-                        if (success) {
-                            errorMessage = null
-                            viewModel.fetchStats()
-                            viewModel.fetchUnlockedAchievements()
-                            onLoginSuccess()
-                        } else {
-                            errorMessage = error ?: "Login failed"
+                Button(
+                    onClick = {
+                        viewModel.deleteAccount(email, password) { success, error ->
+                            if (success) {
+                                onDeleted()
+                            } else {
+                                message = error ?: "Deletion failed"
+                            }
                         }
                     }
-                }) {
-                    Text("Sign In")
-                }
-
-                Button(onClick = { onBack() }) {
-                    Text("Back")
+                ) {
+                    Text("Delete Account")
                 }
             }
         }

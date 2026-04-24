@@ -42,13 +42,14 @@ fun LocalGameHistory(modifier: Modifier = Modifier, viewModel: AppViewModel,onBa
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Main Menu Button
                 Button(
                     onClick = { onBack() }
                 ) {
                     Text("Back")
                 }
-                // Settings button
+                Button(onClick = {viewModel.clearAllLocalHistory()}) {
+                    Text("Clear Local History")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

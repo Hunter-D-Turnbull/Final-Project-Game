@@ -19,8 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -> Unit, onGoToPostGame: () -> Unit) {
-    //Needed data from the viewModel collected as state
+fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToPostGame: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
     val dealerHand by viewModel.dealerHand.collectAsState()
     val playerTurnOver by viewModel.playerTurnOver.collectAsState()
@@ -29,7 +28,27 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
     val currentIndex by viewModel.currentHandIndex.collectAsState()
     val currentBet by viewModel.currentBet.collectAsState()
     val hasPlayed by viewModel.hasPlayed.collectAsState()
-    //Column for the screen
+    val betLocked by viewModel.betLocked.collectAsState()
+
+    val currentHand = hands.getOrNull(currentIndex)
+
+    val canSplit =
+        betLocked &&
+                currentHand?.hand?.size == 2 &&
+                currentHand.hand[0]?.value == currentHand.hand[1]?.value &&
+                currentPoints >= currentBet * 2 &&
+                !hasPlayed
+
+    val canDouble =
+        betLocked &&
+                currentPoints >= currentBet * 2 &&
+                !hasPlayed
+
+    val canIncrease25 = !betLocked && currentBet + 25 <= currentPoints
+    val canIncrease100 = !betLocked && currentBet + 100 <= currentPoints
+    val canDecrease25 = !betLocked && currentBet - 25 > 0
+    val canDecrease100 = !betLocked && currentBet - 100 > 0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,8 +56,8 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         if (currentPoints > 0) {
-            //Internal Column that hold the points value and button to play again after first game
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -47,24 +66,37 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    if (playerTurnOver) {
-                        Button(onClick = { viewModel.playAgain() }) { Text("Play Again") }
+                    if (playerTurnOver && currentIndex == hands.lastIndex) {
+                        Button(onClick = { viewModel.playAgain() }) {
+                            Text("Play Again")
+                        }
                     }
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (!hasPlayed) {
+                if (!betLocked) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { viewModel.minushundred() }) { Text("-100") }
-                        Button(onClick = { viewModel.minustwentyfive() }) { Text("-25") }
+                        if (canDecrease100) {
+                            Button(onClick = { viewModel.minushundred() }) { Text("-100") }
+                        }
+                        if (canDecrease25) {
+                            Button(onClick = { viewModel.minustwentyfive() }) { Text("-25") }
+                        }
                         Text(
                             "$currentBet",
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Button(onClick = { viewModel.plustwentyfive() }) { Text("+25") }
-                        Button(onClick = { viewModel.plushundred() }) { Text("+100") }
+                        if (canIncrease25) {
+                            Button(onClick = { viewModel.plustwentyfive() }) { Text("+25") }
+                        }
+                        if (canIncrease100) {
+                            Button(onClick = { viewModel.plushundred() }) { Text("+100") }
+                        }
+                    }
+                    Button(onClick = { viewModel.lockBetAndDeal() }) {
+                        Text("Lock Bet")
                     }
                 } else {
                     Text(
@@ -75,57 +107,66 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
                     )
                 }
             }
-            //Function for dealer hand composable
-            GameScreenDealerHand(dealerHand, reveal = playerTurnOver)
-            //Function for player hand composable
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Player", color = Color.White)
-                val currentHand = hands.getOrNull(currentIndex)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    currentHand?.hand?.forEach { CardView(it) }
-                }
-                if (hands.size > 1) {
+            if (betLocked) {
+                GameScreenDealerHand(dealerHand, reveal = playerTurnOver)
+            }
+            if (betLocked) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Player", color = Color.White)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (currentIndex > 0) {
-                            Button(onClick = { viewModel.currentHandIndexMinusOne() }) {
-                                Text("Prev")
+                        currentHand?.hand?.forEach { CardView(it) }
+                    }
+                    if (hands.size > 1) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (currentIndex > 0) {
+                                Button(onClick = { viewModel.currentHandIndexMinusOne() }) {
+                                    Text("Prev")
+                                }
                             }
-                        }
-                        if (currentIndex < hands.lastIndex) {
-                            Button(onClick = { viewModel.currentHandIndexPlusOne() }) {
-                                Text("Next")
+                            if (currentIndex < hands.lastIndex) {
+                                Button(onClick = { viewModel.currentHandIndexPlusOne() }) {
+                                    Text("Next")
+                                }
                             }
                         }
                     }
                 }
             }
-            //Row that holds buttons for playing the game
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Button(onClick = { viewModel.hit() }) { Text("Hit") }
-                Button(onClick = { viewModel.stand() }) { Text("Stand") }
-                Button(onClick = { viewModel.doubleDown() }) { Text("Double") }
-                Button(onClick = { viewModel.split() }) { Text("Split") }
+            if (betLocked) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(onClick = { viewModel.hit() }) { Text("Hit") }
+                    Button(onClick = { viewModel.stand() }) { Text("Stand") }
+                    if (canDouble) {
+                        Button(onClick = { viewModel.doubleDown() }) {
+                            Text("Double")
+                        }
+                    }
+                    if (canSplit) {
+                        Button(onClick = { viewModel.split() }) {
+                            Text("Split")
+                        }
+                    }
+                }
             }
-            //Row that holds buttons to navigate to different screens in the game
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { onGoToSettings() }) { Text("Settings") }
                 Button(onClick = {
                     viewModel.endGame()
                     onGoToPostGame()
-                }) { Text("End Game") }
+                }) {
+                    Text("End Game")
+                }
             }
         } else {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
-            ){
+            ) {
                 Text(
                     "Game Over",
                     fontSize = 42.sp,
@@ -137,11 +178,12 @@ fun GameScreen(modifier: Modifier, viewModel: AppViewModel, onGoToSettings: () -
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { onGoToSettings() }) { Text("Settings") }
                 Button(onClick = {
                     viewModel.endGame()
                     onGoToPostGame()
-                }) { Text("End Game") }
+                }) {
+                    Text("End Game")
+                }
             }
         }
     }

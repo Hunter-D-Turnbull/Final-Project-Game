@@ -16,8 +16,12 @@ fun GameScreenDealerHand(dealerHand: List<CardClass?>, reveal: Boolean) {
         Text("Dealer", color = Color.White)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            if (dealerHand.isEmpty()) return
+
             if (!reveal) {
-                repeat(2) {
+                CardView(dealerHand[0])
+                for (i in 1 until dealerHand.size) {
                     CardView(null)
                 }
             } else {

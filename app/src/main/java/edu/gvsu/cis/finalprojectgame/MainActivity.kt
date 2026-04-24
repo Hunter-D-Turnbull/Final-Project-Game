@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
                         composable<GameRoute.ToGameScreen> {
                             GameScreen(modifier = Modifier.padding(innerPadding),
                                 viewModel,
-                                onGoToSettings = {navc.navigate(GameRoute.ToSettingsScreen)},
                                 onGoToPostGame = {navc.navigate(GameRoute.ToPostGameScreen)}
                             )
                         }
@@ -48,13 +47,13 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen(modifier = Modifier.padding(innerPadding),
                                 viewModel,
                                 onGoToColorSelector = {navc.navigate(GameRoute.ToColorSelectorScreen)},
-                                onGoToPostGame = {navc.navigate(GameRoute.ToPostGameScreen)},
                                 onBack = {navc.popBackStack()},
                                 onGoToSignUp = {navc.navigate(GameRoute.toSignUpScreen)},
                                 onGoToLogin = {navc.navigate(GameRoute.toLoginScreen)},
                                 onGoToAccount = {navc.navigate(GameRoute.ToAccountScreen)},
                                 onGoToLocalHistory = {navc.navigate(GameRoute.ToLocalGameHistory)},
-                                onGoToRemoteGameHistory = {navc.navigate(GameRoute.ToRemoteGameHistory)}
+                                onGoToRemoteGameHistory = {navc.navigate(GameRoute.ToRemoteGameHistory)},
+                                onGoToLeaderboard = {navc.navigate(GameRoute.ToLeaderboardScreen)}
                             )
                         }
                         composable<GameRoute.ToColorSelectorScreen> {
@@ -90,10 +89,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable<GameRoute.ToAccountScreen> {
-                            AccountInfoScreen(modifier = Modifier.padding(innerPadding),
+                            AccountInfoScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 viewModel = viewModel,
-                                onBack = {navc.popBackStack()},
-                                onToChangePassword = {navc.navigate(GameRoute.ToPasswordChange)}
+                                onBack = { navc.popBackStack() },
+                                onToChangePassword = { navc.navigate(GameRoute.ToPasswordChange) },
+                                onToAchievements = {navc.navigate(GameRoute.ToAchievementsScreen)},
+                                onToAccountDeletion = {navc.navigate(GameRoute.ToAccountDeletionScreen)}
                             )
                         }
                         composable<GameRoute.ToPasswordChange> {
@@ -122,6 +124,28 @@ class MainActivity : ComponentActivity() {
                             RemoteGameDetailScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 viewModel = viewModel,
+                                onBack = {navc.popBackStack()}
+                            )
+                        }
+                        composable<GameRoute.ToAchievementsScreen> {
+                            AchievementsScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()}
+                            )
+                        }
+                        composable<GameRoute.ToLeaderboardScreen> {
+                            LeaderboardScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onBack = {navc.popBackStack()}
+                            )
+                        }
+                        composable<GameRoute.ToAccountDeletionScreen>{
+                            AccountDeletionScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                viewModel = viewModel,
+                                onDeleted = {navc.popBackStack(route = GameRoute.ToSettingsScreen, inclusive = false)},
                                 onBack = {navc.popBackStack()}
                             )
                         }

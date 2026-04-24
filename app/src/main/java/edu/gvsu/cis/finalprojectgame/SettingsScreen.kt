@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onGoToPostGame: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit, onGoToAccount: () -> Unit, onGoToLocalHistory: () -> Unit, onGoToRemoteGameHistory: () -> Unit) {
+fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelector: () -> Unit, onBack: () -> Unit, onGoToSignUp: () -> Unit, onGoToLogin: () -> Unit, onGoToAccount: () -> Unit, onGoToLocalHistory: () -> Unit, onGoToRemoteGameHistory: () -> Unit, onGoToLeaderboard: () -> Unit) {
     val color by viewModel.currentBackgroundColor.collectAsState()
     val gameInProgress by viewModel.gameInProgress.collectAsState()
     val isSignedIn by viewModel.isUserSignedIn.collectAsState()
@@ -40,9 +40,7 @@ fun SettingsScreen(modifier: Modifier, viewModel: AppViewModel, onGoToColorSelec
             Button(onClick = {onGoToRemoteGameHistory()}) {Text("Remote History")}
         }
         Button(onClick = {onGoToLocalHistory()}) {Text("Local History")}
+        Button(onClick = {onGoToLeaderboard()}) {Text("Leaderboard")}
         Button(onClick = {onBack()}) { Text("Back")}
-        if(gameInProgress) {
-            Button(onClick = { onGoToPostGame() }) { Text("End Game") }
-        }
     }
 }
